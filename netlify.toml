@@ -1,5 +1,5 @@
 [build]
-command = "npm install"
+command = "npm ci --legacy-peer-deps"
 functions = "netlify/functions"
 publish = "."
 
