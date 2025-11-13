@@ -132,119 +132,18 @@ document.addEventListener('DOMContentLoaded', async function() {
             if (appUrls[app]) {
                 try {
                     const redirectUrl = appUrls[app];
-                    
-                    // Generate obfuscated random window name
-                    const randomWindowName = 'w' + Math.random().toString(36).substr(2, 9) + Math.random().toString(36).substr(2, 9);
-                    
-                    // Advanced stealth features
-                    const features = [
-                        'menubar=no',
-                        'toolbar=no',
-                        'location=no',
-                        'status=no',
-                        'scrollbars=yes',
-                        'resizable=yes',
-                        'width=1280',
-                        'height=720',
-                        'left=0',
-                        'top=0',
-                        'chrome=no',
-                        'channelmode=no',
-                        'directories=no',
-                        'fullscreen=no',
-                        'personalbar=no',
-                        'titlebar=no'
-                    ].join(',');
-                    
-                    // Open popup with stealth features
-                    const popup = window.open('about:blank', randomWindowName, features);
-                    
-                    if (popup) {
-                        // Attempt to hide window object properties
-                        try {
-                            Object.defineProperty(popup, 'opener', { value: null });
-                        } catch (e) {}
-                        
-                        // Clear document immediately
-                        popup.document.write('');
-                        popup.document.close();
-                        
-                        // Multiple redirect methods with random delays to evade detection
-                        const delays = [50, 100, 150, 200];
-                        
-                        // Method 1: Direct href
-                        setTimeout(() => {
-                            try {
-                                popup.location.href = redirectUrl;
-                            } catch (e) {}
-                        }, delays[Math.floor(Math.random() * delays.length)]);
-                        
-                        // Method 2: Replace (no history)
-                        setTimeout(() => {
-                            try {
-                                popup.location.replace(redirectUrl);
-                            } catch (e) {}
-                        }, delays[Math.floor(Math.random() * delays.length)]);
-                        
-                        // Method 3: Assign (alternative redirect)
-                        setTimeout(() => {
-                            try {
-                                popup.location.assign(redirectUrl);
-                            } catch (e) {}
-                        }, delays[Math.floor(Math.random() * delays.length)]);
-                        
-                        // Obfuscate popup reference
-                        try {
-                            popup.window = undefined;
-                            popup.self = undefined;
-                        } catch (e) {}
-                        
-                        // Multiple focus attempts
-                        setTimeout(() => {
-                            if (popup && popup.focus) {
-                                popup.focus();
-                            }
-                        }, 50);
-                        
-                        // Clear all references
-                        setTimeout(() => {
-                            try {
-                                popup = null;
-                            } catch (e) {}
-                        }, 300);
-                        
-                        // Create dummy reference to mislead detectors
-                        window['_temp_' + randomWindowName] = null;
-                        
-                        // Open a small same-origin monitor window to deliver broadcasts while user is in external popup
-                        try {
-                            const monitorKey = 'monitor_' + (username || 'user');
-                            if (!window[monitorKey] || window[monitorKey].closed) {
-                                const monName = 'mon_' + Math.random().toString(36).substr(2,6);
-                                const mon = window.open('/popup-monitor.html', monName, 'width=360,height=200,menubar=no,toolbar=no,location=no,status=no,resizable=yes');
-                                try { window[monitorKey] = mon; } catch (e) {}
-                            }
-                        } catch (e) {}
-                        
+
+                    // Try to open in a new tab/window in a normal, non-stealth way
+                    const popup = window.open(redirectUrl, '_blank');
+
+                    // If popup is blocked (returns null) or immediately closed, show a friendly fallback modal
+                    if (!popup) {
+                        showPopupBlockedModal(redirectUrl);
                     } else {
-                        // If popup is blocked, use alternative method
-                        // Attempt iframe approach first (can bypass some filters)
-                        try {
-                            const iframe = document.createElement('iframe');
-                            iframe.style.display = 'none';
-                            iframe.src = redirectUrl;
-                            document.body.appendChild(iframe);
-                            
-                            setTimeout(() => {
-                                document.body.removeChild(iframe);
-                            }, 5000);
-                        } catch (e) {
-                            // Fallback to direct navigation
-                            window.location.href = redirectUrl;
-                        }
+                        try { popup.focus(); } catch (e) {}
                     }
                 } catch (error) {
-                    // Ultimate fallback
+                    // Ultimate fallback: navigate in current tab
                     window.location.href = appUrls[app];
                 }
             }
@@ -257,3 +156,60 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Refresh premium status every 3 seconds
     setInterval(updateAppAccess, 3000);
 });
+
+    // Create a reusable modal to show when popups are blocked
+    function showPopupBlockedModal(url) {
+        // If modal already exists, update link and show
+        let modal = document.getElementById('popupBlockedModal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'popupBlockedModal';
+            modal.style.position = 'fixed';
+            modal.style.left = '0';
+            modal.style.top = '0';
+            modal.style.width = '100%';
+            modal.style.height = '100%';
+            modal.style.display = 'flex';
+            modal.style.alignItems = 'center';
+            modal.style.justifyContent = 'center';
+            modal.style.background = 'rgba(0,0,0,0.5)';
+            modal.style.zIndex = '99999';
+
+            modal.innerHTML = `
+                <div style="background:#fff;padding:18px;border-radius:8px;max-width:480px;width:90%;box-shadow:0 8px 24px rgba(0,0,0,0.2);font-family:inherit;">
+                    <h3 style="margin-top:0">Popup Blocked</h3>
+                    <p>It looks like your browser or school device blocked opening a new window. You can open the app manually or allow popups for this site.</p>
+                    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;">
+                        <button id="pbOpenSameBtn" style="background:#007bff;color:#fff;border:none;padding:8px 12px;border-radius:4px;cursor:pointer">Open Here</button>
+                        <button id="pbCopyBtn" style="background:#6c757d;color:#fff;border:none;padding:8px 12px;border-radius:4px;cursor:pointer">Copy Link</button>
+                        <button id="pbCloseBtn" style="background:transparent;border:1px solid #ccc;padding:8px 12px;border-radius:4px;cursor:pointer">Close</button>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+
+            document.getElementById('pbCloseBtn').addEventListener('click', () => {
+                modal.style.display = 'none';
+            });
+
+            document.getElementById('pbOpenSameBtn').addEventListener('click', () => {
+                // Navigate current tab to the URL
+                window.location.href = document.getElementById('pbOpenSameBtn').dataset.url || url;
+            });
+
+            document.getElementById('pbCopyBtn').addEventListener('click', async () => {
+                const link = document.getElementById('pbOpenSameBtn').dataset.url || url;
+                try {
+                    await navigator.clipboard.writeText(link);
+                    alert('Link copied to clipboard');
+                } catch (e) {
+                    prompt('Copy this link:', link);
+                }
+            });
+        }
+
+        // Update stored URL and show modal
+        document.getElementById('pbOpenSameBtn').dataset.url = url;
+        modal.style.display = 'flex';
+    }
