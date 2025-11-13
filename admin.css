@@ -1,0 +1,351 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #f5f5f5;
+    min-height: 100vh;
+}
+
+.admin-container {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.admin-header {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+    color: white;
+    padding: 25px 40px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.admin-header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.btn-back {
+    padding: 10px 20px;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.btn-back:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px);
+}
+
+.site-logo {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-right: 12px;
+}
+
+.admin-content {
+    flex: 1;
+    padding: 40px;
+}
+
+.admin-section {
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    margin-bottom: 30px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.admin-section h2 {
+    color: #333;
+    margin-bottom: 20px;
+    font-size: 1.5rem;
+}
+
+.users-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.user-item {
+    background: #f9f9f9;
+    padding: 15px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-left: 4px solid #667eea;
+}
+
+.user-info h4 {
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.user-info p {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.user-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-delete {
+    padding: 8px 16px;
+    background: #ff6b6b;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.btn-delete:hover {
+    background: #ff5252;
+    transform: translateY(-2px);
+}
+
+.premium-form {
+    display: flex;
+    gap: 10px;
+}
+
+.premium-form input {
+    flex: 1;
+    padding: 12px 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1rem;
+}
+
+.premium-form input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.btn-primary {
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+}
+
+.btn-danger {
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.btn-danger:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(255, 107, 107, 0.3);
+}
+
+/* Payments Section */
+.payments-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.payment-item {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.payment-info h4 {
+    color: #333;
+    margin-bottom: 8px;
+    font-size: 16px;
+}
+
+.payment-info p {
+    color: #666;
+    font-size: 13px;
+    margin-bottom: 5px;
+}
+
+.status-pending {
+    background: #fef3c7;
+    color: #92400e;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 12px;
+}
+
+.status-confirmed {
+    background: #dcfce7;
+    color: #15803d;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 12px;
+}
+
+.payment-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-confirm {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.btn-confirm:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+.empty-message {
+    color: #999;
+    text-align: center;
+    padding: 20px;
+    font-style: italic;
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+    border: none;
+}
+
+.btn-danger:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+
+/* Payments List */
+.payments-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.payment-item {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.payment-info h4 {
+    color: #333;
+    margin-bottom: 8px;
+    font-size: 16px;
+}
+
+.payment-info p {
+    color: #666;
+    font-size: 14px;
+    margin: 5px 0;
+}
+
+.status-pending {
+    color: #f59e0b;
+    font-weight: 700;
+}
+
+.status-confirmed {
+    color: #10b981;
+    font-weight: 700;
+}
+
+.payment-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-confirm {
+    padding: 8px 16px;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.btn-confirm:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+.empty-message {
+    color: #999;
+    text-align: center;
+    padding: 20px;
+    font-style: italic;
+}
+
+@media (max-width: 768px) {
+    .admin-header {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start;
+    }
+
+    .premium-form {
+        flex-direction: column;
+    }
+
+    .user-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .user-actions {
+        width: 100%;
+    }
+
+    .user-actions .btn-delete {
+        flex: 1;
+    }
+}

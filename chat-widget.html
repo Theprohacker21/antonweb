@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Widget</title>
+    <link rel="stylesheet" href="chat.css">
+    <link rel="icon" href="https://cdn.discordapp.com/attachments/1436520150047133706/1438390237305770158/a0KC3AAAAAZJREFUAwBBCk6Pi6At2gAAAABJRU5ErkJggg.png?ex=6916b4cc&is=6915634c&hm=57a7b34402197369126aebe700272de17c4e8ee95c160369d662d2c35b0e607f&" type="image/png">
+</head>
+<body>
+    <!-- Chat Widget -->
+    <div id="chatWidget" class="chat-widget">
+        <!-- Chat Button (Floating Circle) -->
+        <button id="chatToggle" class="chat-toggle">
+            <span class="chat-icon">💬</span>
+            <span id="unreadBadge" class="unread-badge" style="display: none;">1</span>
+        </button>
+
+        <!-- Chat Container -->
+        <div id="chatContainer" class="chat-container" style="display: none;">
+            <!-- Header -->
+            <div class="chat-header">
+                <h3>NMS Group Chat</h3>
+                <button id="chatClose" class="chat-close">✕</button>
+            </div>
+
+            <!-- Messages -->
+            <div id="messagesContainer" class="messages-container"></div>
+
+            <!-- Input -->
+            <div class="chat-input-area">
+                <input 
+                    type="text" 
+                    id="chatInput" 
+                    placeholder="Type a message..."
+                    autocomplete="off"
+                >
+                <button id="sendBtn" class="send-btn">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="chat.js"></script>
+</body>
+</html>

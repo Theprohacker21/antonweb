@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium - App Launcher</title>
+    <link rel="stylesheet" href="premium.css">
+    <link rel="icon" href="https://cdn.discordapp.com/attachments/1436520150047133706/1438390237305770158/a0KC3AAAAAZJREFUAwBBCk6Pi6At2gAAAABJRU5ErkJggg.png?ex=6916b4cc&is=6915634c&hm=57a7b34402197369126aebe700272de17c4e8ee95c160369d662d2c35b0e607f&" type="image/png">
+</head>
+<body>
+    <div class="premium-page">
+        <!-- Back Button -->
+        <button id="backBtn" class="back-btn">← Back to Dashboard</button>
+
+        <!-- Premium Card -->
+        <div class="premium-card">
+            <div class="premium-header">
+                <h1>Premium</h1>
+                <p class="premium-price">$15.00</p>
+            </div>
+
+            <div class="premium-perks">
+                <h2>Unlock All Features</h2>
+                <div class="perks-list">
+                    <div class="perk">
+                        <span class="perk-icon">🔓</span>
+                        <span class="perk-text">Access to all premium apps</span>
+                    </div>
+                    <div class="perk">
+                        <span class="perk-icon">⚡</span>
+                        <span class="perk-text">Priority access and faster loading</span>
+                    </div>
+                    <div class="perk">
+                        <span class="perk-icon">🎮</span>
+                        <span class="perk-text">6 Hours Unlocked on GeforceNow</span>
+                    </div>
+                    <div class="perk">
+                        <span class="perk-icon">📱</span>
+                        <span class="perk-text">Social media access (TikTok, Instagram, Twitter)</span>
+                    </div>
+                    <div class="perk">
+                        <span class="perk-icon">🎵</span>
+                        <span class="perk-text">Entertainment streaming (Netflix, Spotify)</span>
+                    </div>
+                    <div class="perk">
+                        <span class="perk-icon">♾️</span>
+                        <span class="perk-text">Lifetime access once purchased</span>
+                    </div>
+                </div>
+            </div>
+
+            <button id="upgradeBtn" class="upgrade-btn">Upgrade to Premium</button>
+        </div>
+    </div>
+
+    <!-- Payment Modal -->
+    <div id="paymentModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <button class="modal-close">&times;</button>
+            <h2>Select Payment Method</h2>
+            <p>Choose how you'd like to pay for Premium</p>
+
+            <div class="payment-options">
+                <button id="cashOption" class="payment-option">
+                    <div class="option-icon">💵</div>
+                    <div class="option-title">Cash Payment</div>
+                    <div class="option-desc">Bring $15 cash to Anton</div>
+                </button>
+
+                <button id="stripeOption" class="payment-option">
+                    <div class="option-icon">💳</div>
+                    <div class="option-title">Stripe Payment</div>
+                    <div class="option-desc">Pay securely online</div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cash Payment Confirmation Modal -->
+    <div id="cashConfirmModal" class="modal" style="display: none;">
+        <div class="modal-content cash-modal">
+            <button class="modal-close">&times;</button>
+            <h2>Cash Payment Instructions</h2>
+            <div class="cash-instructions">
+                <div class="instruction-step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h3>Amount Required</h3>
+                        <p>$15.00</p>
+                    </div>
+                </div>
+
+                <div class="instruction-step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h3>Who to Pay</h3>
+                        <p>Anton Krupinski</p>
+                    </div>
+                </div>
+
+                <div class="instruction-step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h3>Timeline</h3>
+                        <p>Bring cash within the next day or week</p>
+                    </div>
+                </div>
+
+                <div class="instruction-step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h3>Confirmation</h3>
+                        <p>Your premium access will be activated upon payment</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="cash-info-box">
+                <strong>📝 Note:</strong> An admin notification has been sent. You will receive premium access once the payment is confirmed.
+            </div>
+
+            <button id="confirmCashBtn" class="confirm-btn">I Understand, Proceed</button>
+        </div>
+    </div>
+
+    <!-- Stripe Payment Modal -->
+    <div id="stripeModal" class="modal" style="display: none;">
+        <div class="modal-content stripe-modal">
+            <button class="modal-close">&times;</button>
+            <h2>Stripe Payment</h2>
+            <p>Complete your payment to unlock premium instantly</p>
+
+            <form id="stripeForm">
+                <div class="form-group">
+                    <label>Card Information</label>
+                    <div id="card-element" class="card-input"></div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="email" placeholder="your@email.com" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Name</label>
+                        <input type="text" id="name" placeholder="Full Name" required>
+                    </div>
+                </div>
+
+                <button type="submit" id="payBtn" class="pay-btn">Pay $15.00</button>
+                <div id="card-errors" class="error-message"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="successModal" class="modal" style="display: none;">
+        <div class="modal-content success-modal">
+            <div class="success-icon">✓</div>
+            <h2>Premium Unlocked!</h2>
+            <p>Congratulations! You now have access to all premium features.</p>
+            <button id="successBtn" class="confirm-btn">Return to Dashboard</button>
+        </div>
+    </div>
+
+    <script src="https://js.stripe.com/v3/"></script>
+    <script src="premium.js"></script>
+</body>
+</html>

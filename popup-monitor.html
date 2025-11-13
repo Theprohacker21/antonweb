@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Monitor</title>
+  <link rel="stylesheet" href="notifications.css" />
+  <link rel="icon" href="https://cdn.discordapp.com/attachments/1436520150047133706/1438390237305770158/a0KC3AAAAAZJREFUAwBBCk6Pi6At2gAAAABJRU5ErkJggg.png?ex=6916b4cc&is=6915634c&hm=57a7b34402197369126aebe700272de17c4e8ee95c160369d662d2c35b0e607f&" type="image/png">
+    <link rel="icon" href="https://media.discordapp.net/attachments/1436520150047133706/1438389504196087918/winged-purple-dragon-by-jimjemr-brandcrowd.png?ex=6916b41d&is=6915629d&hm=a21798398e61a26197c5f7972c135b3719a80b4177daa0f999a46ad64ff9329e&=&format=webp&quality=lossless" type="image/png">
+</head>
+<body>
+  <div style="padding:12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+    <h4 style="margin:0 0 8px 0">Live Messages</h4>
+    <div id="monitorList">Waiting for updates...</div>
+  </div>
+
+  <script src="notifications.js"></script>
+  <script>
+    // Show incoming broadcasts in simple list
+    let lastId = 0;
+    function updateMonitorList(broadcasts) {
+      const list = document.getElementById('monitorList');
+      if (!broadcasts || broadcasts.length === 0) return;
+      lastId = broadcasts[broadcasts.length-1].id;
+      list.innerHTML = '';
+      broadcasts.slice().reverse().forEach(b => {
+        const el = document.createElement('div');
+        el.style.padding = '8px 6px';
+        el.style.borderBottom = '1px solid #eee';
+        el.textContent = b.message + ' — ' + new Date(b.createdAt).toLocaleString();
+        list.appendChild(el);
+        // Also show the sliding notification in this monitor window
+        try { notifyBroadcast(b.message); } catch(e) {}
+      });
+    }
+
+    // Poll broadcasts every 3s
+    async function poll() {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      try {
+        const res = await fetch('/api/broadcasts?since=' + lastId, { headers: { 'Authorization': 'Bearer ' + token } });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.newBroadcasts && data.newBroadcasts.length) {
+            updateMonitorList(data.newBroadcasts);
+          }
+        }
+      } catch (e) {}
+    }
+
+    setInterval(poll, 3000);
+    poll();
+  </script>
+</body>
+</html>

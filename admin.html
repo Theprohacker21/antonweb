@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel</title>
+    <link rel="stylesheet" href="admin.css">
+    <link rel="icon" href="https://cdn.discordapp.com/attachments/1436520150047133706/1438390237305770158/a0KC3AAAAAZJREFUAwBBCk6Pi6At2gAAAABJRU5ErkJggg.png?ex=6916b4cc&is=6915634c&hm=57a7b34402197369126aebe700272de17c4e8ee95c160369d662d2c35b0e607f&" type="image/png">
+</head>
+<body>
+        <link rel="stylesheet" href="notifications.css">
+        <script src="notifications.js"></script>
+    <div class="admin-container">
+        <header class="admin-header">
+            <img src="https://cdn.discordapp.com/attachments/1436520150047133706/1438390237305770158/a0KC3AAAAAZJREFUAwBBCk6Pi6At2gAAAABJRU5ErkJggg.png?ex=6916b4cc&is=6915634c&hm=57a7b34402197369126aebe700272de17c4e8ee95c160369d662d2c35b0e607f&" alt="Falcon Logo" class="site-logo">
+            <h1>Admin Panel</h1>
+            <button id="backBtn" class="btn-back">← Back to Dashboard</button>
+        </header>
+
+        <div class="admin-content">
+            <section class="admin-section">
+                <h2>User Management</h2>
+                <div id="usersList" class="users-list"></div>
+            </section>
+
+            <section class="admin-section">
+                <h2>Grant Premium Access</h2>
+                <div class="premium-form">
+                    <input type="text" id="premiumUsername" placeholder="Enter username">
+                    <button id="grantPremiumBtn" class="btn-primary">Grant Premium</button>
+                </div>
+            </section>
+
+            <section class="admin-section">
+                <h2>Remove Premium Access</h2>
+                <div class="premium-form">
+                    <input type="text" id="removePremiumUsername" placeholder="Enter username">
+                    <button id="removePremiumBtn" class="btn-danger">Remove Premium</button>
+                </div>
+            </section>
+
+            <section class="admin-section">
+                <h2>💰 Pending Payments</h2>
+                <div id="paymentsList" class="payments-list"></div>
+            </section>
+
+            <section class="admin-section">
+                <h2>📣 Broadcast Message</h2>
+                <div class="premium-form">
+                    <textarea id="broadcastMessage" placeholder="Type message for all users" rows="3" style="width:100%; padding:8px; border-radius:6px; border:1px solid #e2e8f0"></textarea>
+                    <button id="sendBroadcastBtn" class="btn-primary" style="margin-top:8px">Send Broadcast</button>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script src="admin.js"></script>
+</body>
+</html>
