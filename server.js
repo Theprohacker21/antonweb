@@ -9,6 +9,13 @@ const PORT = 3000;
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Ensure all /api/* responses have proper JSON content-type
+app.use('/api/', (req, res, next) => {
+    res.setHeader('Content-Type', 'application/json');
+    next();
+});
+
 app.use(express.static('.'));
 
 // Simple in-memory user database (will be replaced with file storage)
@@ -460,6 +467,33 @@ app.get('/api/broadcasts', (req, res) => {
 // Redirect index to signup
 app.get('/', (req, res) => {
     res.redirect('/signup.html');
+});
+
+// Catch-all middleware for unmatched /api/* routes - always return JSON
+app.use('/api/', (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.status(404).json({ 
+        error: 'API endpoint not found',
+        path: req.path,
+        method: req.method,
+        message: 'Check the endpoint URL and HTTP method'
+    });
+});
+
+// Catch-all middleware for unmatched static routes - serve static file or 404
+app.use((req, res) => {
+    res.setHeader('Content-Type', 'text/html');
+    res.status(404).send('<!DOCTYPE html><html><body><h1>404 Not Found</h1><p>File not found: ' + req.path + '</p></body></html>');
+});
+
+// Error handling middleware - always return JSON for /api errors
+app.use((err, req, res, next) => {
+    console.error('Error:', err);
+    res.setHeader('Content-Type', 'application/json');
+    res.status(err.status || 500).json({ 
+        error: 'Internal server error',
+        message: err.message || 'An unexpected error occurred'
+    });
 });
 
 app.listen(PORT, () => {
