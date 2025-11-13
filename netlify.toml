@@ -3,6 +3,9 @@ command = "npm install"
 functions = "netlify/functions"
 publish = "."
 
+# ⚠️ IMPORTANT: Data persistence issue with Netlify Functions
+# See NETLIFY_PERSISTENCE.md for details and solutions
+
 [[redirects]]
 from = "/api/*"
 to = "/.netlify/functions/api"
@@ -13,3 +16,9 @@ for = "/api/*"
 [headers.values]
 "Content-Type" = "application/json"
 "Access-Control-Allow-Origin" = "*"
+
+# Environment variables needed for persistent storage:
+# FIREBASE_CREDENTIALS: JSON service account key from Firebase
+# 
+# Without these, data will NOT persist between function invocations
+# See: NETLIFY_PERSISTENCE.md and netlify/setup-firebase.js

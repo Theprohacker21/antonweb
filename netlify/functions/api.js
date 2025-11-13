@@ -4,15 +4,31 @@
 const fs = require('fs');
 const path = require('path');
 
-// File storage paths - use project .netlify directory which persists
-// Note: On Netlify, use environment or database for true persistence
-// This stores in memory per function invocation; for production, use Firestore/MongoDB
+// ⚠️ CRITICAL: Netlify Functions filesystem persistence issue
+// Each function invocation gets:
+// - Fresh /tmp directory (ephemeral - data lost)
+// - Deployed files are READ-ONLY (can't write)
+//
+// CURRENT WORKAROUND: Use /tmp within a single invocation,
+// but understand data won't persist between invocations
+//
+// PERMANENT SOLUTION (REQUIRED FOR PRODUCTION):
+// Set up Firebase Firestore by:
+// 1. Creating a Firebase project at console.firebase.google.com
+// 2. Generating a service account key (Project Settings > Service Accounts)
+// 3. Setting FIREBASE_CREDENTIALS env var in Netlify Dashboard
+// 4. Uncommenting the Firestore code in netlify/functions/firestore-db.js
+
+// Use volatile storage that at least works during testing
+// Each request will re-load data from /tmp (fresh but empty)
 const os = require('os');
-const dataDir = process.env.NETLIFY ? os.tmpdir() : path.join(__dirname, '../../');
-const usersFile = path.join(dataDir, '.netlify-users.json');
-const messagesFile = path.join(dataDir, '.netlify-messages.json');
-const paymentsFile = path.join(dataDir, '.netlify-payments.json');
-const broadcastsFile = path.join(dataDir, '.netlify-broadcasts.json');
+const tempDir = os.tmpdir();
+
+// Use a consistent temp filename per deployment
+const usersFile = path.join(tempDir, 'netlify-data-users.json');
+const messagesFile = path.join(tempDir, 'netlify-data-messages.json');
+const paymentsFile = path.join(tempDir, 'netlify-data-payments.json');
+const broadcastsFile = path.join(tempDir, 'netlify-data-broadcasts.json');
 
 let users = [];
 let messages = [];
@@ -25,9 +41,12 @@ function loadUsers() {
         if (fs.existsSync(usersFile)) {
             const data = fs.readFileSync(usersFile, 'utf8');
             users = JSON.parse(data);
+            console.log(`[Netlify] Loaded ${users.length} users from ${usersFile}`);
+        } else {
+            users = [];
         }
     } catch (error) {
-        console.log('No users file found, starting fresh');
+        console.warn('Could not load users file, starting fresh:', error.message);
         users = [];
     }
 }
@@ -35,8 +54,10 @@ function loadUsers() {
 function saveUsers() {
     try {
         fs.writeFileSync(usersFile, JSON.stringify(users, null, 2));
+        console.log(`[Netlify] Saved ${users.length} users to ${usersFile}`);
     } catch (e) {
-        console.error('Error saving users:', e);
+        console.error(`[Netlify] ERROR saving users to ${usersFile}:`, e.message);
+        // Silently fail - data stays in memory for this invocation
     }
 }
 
@@ -75,8 +96,11 @@ function loadPayments() {
 function savePayments() {
     try {
         fs.writeFileSync(paymentsFile, JSON.stringify(paymentNotifications, null, 2));
+        console.log(`[Netlify] ✓ Saved ${paymentNotifications.length} payments to ${paymentsFile}`);
+        return { success: true, saved: paymentNotifications.length, file: paymentsFile };
     } catch (e) {
-        console.error('Error saving payments:', e);
+        console.error(`[Netlify] ✗ ERROR saving payments to ${paymentsFile}:`, e.message);
+        return { success: false, error: e.message, file: paymentsFile };
     }
 }
 
@@ -280,17 +304,41 @@ const routes = {
             return { status: 401, body: { message: 'Unauthorized' } };
         }
         const { amount } = req.body;
+        
+        console.log(`[PAYMENT] Cash payment from ${username} for $${amount}`);
+        console.log(`[PAYMENT] Current notifications in memory: ${paymentNotifications.length}`);
+        console.log(`[PAYMENT] Payment file: ${paymentsFile}`);
+        
         const notification = {
             id: paymentNotifications.length > 0 ? Math.max(...paymentNotifications.map(p => p.id)) + 1 : 1,
             type: 'cash',
             username: username,
             amount: amount,
             status: 'pending',
-            createdAt: new Date()
+            createdAt: new Date().toISOString()
         };
+        
         paymentNotifications.push(notification);
-        savePayments();
-        return { status: 200, body: { success: true, message: 'Cash payment notification sent to admin' } };
+        console.log(`[PAYMENT] Added notification, now ${paymentNotifications.length} in memory`);
+        
+        const saveResult = savePayments();
+        console.log(`[PAYMENT] Save result:`, saveResult);
+        
+        return { 
+            status: 200, 
+            body: { 
+                success: true, 
+                message: 'Cash payment notification sent to admin',
+                paymentId: notification.id,
+                debug: {
+                    username,
+                    amount,
+                    notificationId: notification.id,
+                    totalNotifications: paymentNotifications.length,
+                    filename: paymentsFile
+                }
+            } 
+        };
     },
 
     'POST /api/premium/stripe-payment': (req) => {
