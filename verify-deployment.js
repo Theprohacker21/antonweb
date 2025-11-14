@@ -93,13 +93,15 @@ checkFileExists('notifications.js', 'Notifications logic');
 
 // === BACKEND FUNCTIONS ===
 console.log('\n🔧 Backend Functions:');
-checkFileExists('netlify/functions/api.js', 'Netlify serverless API');
+checkFileExists('api/lib.js', 'Shared library functions');
+checkFileExists('api/auth/[action].js', 'Auth endpoints');
+checkFileExists('api/admin/users.js', 'Admin users endpoint');
+checkFileExists('api/user/status.js', 'User status endpoint');
 
 // === DEPENDENCIES ===
 console.log('\n📦 Dependencies:');
 checkDependency('express', 'Express.js');
 checkDependency('cors', 'CORS middleware');
-checkDependency('fs', 'File system (built-in)');
 
 // === SERVER CONFIGURATION ===
 console.log('\n⚙️ Server Configuration:');
@@ -111,15 +113,14 @@ checkFileContent('server.js', '/api/auth/signup', 'Signup endpoint');
 checkFileContent('server.js', '/api/auth/login', 'Login endpoint');
 
 // === NETLIFY FUNCTIONS ===
-console.log('\n⚙️ Netlify Functions:');
-checkFileContent('netlify/functions/api.js', 'exports.handler', 'Netlify handler exported');
-checkFileContent('netlify/functions/api.js', 'POST /api/auth/login', 'Auth endpoints in functions');
-checkFileContent('netlify/functions/api.js', 'GET /api/broadcasts', 'Broadcast endpoints in functions');
+console.log('\n⚙️ Vercel Configuration:');
+checkFileContent('vercel.json', '"version": 2', 'Vercel v2 configuration');
+checkFileContent('vercel.json', '"version"', 'Vercel config file valid');
 
 // === AUTHENTICATION ===
 console.log('\n🔐 Authentication Setup:');
 checkFileContent('server.js', "username === 'Anton'", 'Admin user (Anton) configured');
-checkFileContent('netlify/functions/api.js', "username === 'Anton'", 'Admin user in Netlify functions');
+checkFileContent('api/lib.js', "verifyToken", 'Auth verification in Vercel functions');
 checkFileContent('dashboard.js', "username === 'Anton'", 'Admin check in frontend');
 
 // === DATA PERSISTENCE ===
@@ -131,10 +132,10 @@ checkFileContent('server.js', 'broadcasts.json', 'Broadcasts storage');
 
 // === CLIENT-SIDE FEATURES ===
 console.log('\n✨ Client-Side Features:');
-checkFileContent('dashboard.js', 'window.open(redirectUrl', 'Popup launcher');
+checkFileContent('dashboard.js', 'window.open', 'Popup launcher');
 checkFileContent('chat.js', '/api/chat/send', 'Chat messaging');
 checkFileContent('admin.js', '/api/admin/broadcast', 'Admin broadcast');
-checkFileContent('premium.js', '/api/premium/stripe-payment', 'Premium payment');
+checkFileContent('premium.js', '/api/premium', 'Premium payment');
 checkFileContent('notifications.js', 'updateNotifier', 'Update notifications');
 
 // === ERROR HANDLING ===

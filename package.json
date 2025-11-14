@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
-    "build": "echo 'Build complete'",
+    "build": "echo 'Vercel build complete'",
     "verify": "node verify-deployment.js"
   },
   "keywords": [
