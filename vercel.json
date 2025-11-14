@@ -1,9 +1,9 @@
 {
 	"version": 2,
-	"buildCommand": "npm run build",
-	"outputDirectory": "public",
+	"builds": [
+		{ "src": "public/**", "use": "@vercel/static" }
+	],
 	"routes": [
-		{ "src": "/api/(.*)", "dest": "/api/$1.js" },
 		{ "src": "^/(.*\\.(css|js|png|jpg|svg|ico|json|html))$", "dest": "/$1" },
 		{ "src": "/.*", "dest": "/index.html" }
 	]
