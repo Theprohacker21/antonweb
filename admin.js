@@ -104,20 +104,69 @@ document.addEventListener('DOMContentLoaded', async function() {
         const usersList = document.getElementById('usersList');
         usersList.innerHTML = '';
 
-        users.forEach(user => {
+        // Separate users into active and all
+        const allUsers = users || [];
+        
+        // Add header showing counts
+        const header = document.createElement('div');
+        header.style.cssText = 'margin-bottom: 20px; padding: 12px; background: #f0f0f0; border-radius: 6px;';
+        header.innerHTML = `
+            <h3 style="margin: 0 0 8px 0;">User Statistics</h3>
+            <p style="margin: 4px 0;"><strong>Total Users:</strong> ${allUsers.length}</p>
+            <p style="margin: 4px 0;"><strong>Premium Users:</strong> ${allUsers.filter(u => u.isPremium).length}</p>
+            <p style="margin: 4px 0;"><strong>Free Users:</strong> ${allUsers.filter(u => !u.isPremium).length}</p>
+        `;
+        usersList.appendChild(header);
+
+        if (allUsers.length === 0) {
+            const empty = document.createElement('p');
+            empty.textContent = 'No users found';
+            empty.style.color = '#999';
+            usersList.appendChild(empty);
+            return;
+        }
+
+        // Display all users
+        allUsers.forEach(user => {
             const userItem = document.createElement('div');
             userItem.className = 'user-item';
+            userItem.style.cssText = 'border: 1px solid #ddd; border-radius: 6px; padding: 12px; margin-bottom: 12px; background: #fff;';
+            
+            const premiumStatus = user.isPremium ? '✅ Premium' : '❌ Free';
+            const premiumButtonText = user.isPremium ? 'Remove Premium' : 'Grant Premium';
+            const premiumButtonColor = user.isPremium ? '#dc3545' : '#28a745';
+            
             userItem.innerHTML = `
-                <div class="user-info">
-                    <h4>${user.username}</h4>
-                    <p>Email: ${user.email}</p>
-                    <p>Premium: ${user.isPremium ? '✅ Yes' : '❌ No'}</p>
-                </div>
-                <div class="user-actions">
-                    <button class="btn-delete" data-username="${user.username}">Delete Account</button>
+                <div class="user-info" style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h4 style="margin: 0 0 8px 0;">${user.username}</h4>
+                        <p style="margin: 4px 0; color: #666;">Email: ${user.email}</p>
+                        <p style="margin: 4px 0; font-weight: bold;">${premiumStatus}</p>
+                    </div>
+                    <div class="user-actions" style="display: flex; gap: 8px; flex-direction: column;">
+                        <button class="btn-premium-toggle" data-username="${user.username}" style="padding: 6px 12px; background: ${premiumButtonColor}; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                            ${premiumButtonText}
+                        </button>
+                        <button class="btn-delete" data-username="${user.username}" style="padding: 6px 12px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                            Delete
+                        </button>
+                    </div>
                 </div>
             `;
 
+            // Premium toggle handler
+            userItem.querySelector('.btn-premium-toggle').addEventListener('click', async function() {
+                const action = user.isPremium ? 'Remove' : 'Grant';
+                if (confirm(`${action} premium for ${user.username}?`)) {
+                    if (user.isPremium) {
+                        await removePremium(user.username);
+                    } else {
+                        await grantPremium(user.username);
+                    }
+                }
+            });
+
+            // Delete handler
             userItem.querySelector('.btn-delete').addEventListener('click', async function() {
                 if (confirm(`Are you sure you want to delete account: ${user.username}?`)) {
                     await deleteUser(user.username);
@@ -127,6 +176,61 @@ document.addEventListener('DOMContentLoaded', async function() {
             usersList.appendChild(userItem);
         });
     }
+
+    // Grant premium to user
+    async function grantPremium(targetUsername) {
+        try {
+            const response = await fetch('/api/admin/grant-premium', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username: targetUsername })
+            });
+
+            const data = await response.json();
+            
+            if (response.ok) {
+                alert('✅ Premium granted to ' + targetUsername);
+                loadUsers();
+            } else {
+                alert('❌ Error: ' + (data.message || 'Failed to grant premium'));
+                console.error('Grant premium error:', data);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('❌ Error granting premium: ' + error.message);
+        }
+    }
+
+    // Remove premium from user
+    async function removePremium(targetUsername) {
+        try {
+            const response = await fetch('/api/admin/remove-premium', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username: targetUsername })
+            });
+
+            const data = await response.json();
+            
+            if (response.ok) {
+                alert('✅ Premium removed from ' + targetUsername);
+                loadUsers();
+            } else {
+                alert('❌ Error: ' + (data.message || 'Failed to remove premium'));
+                console.error('Remove premium error:', data);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('❌ Error removing premium: ' + error.message);
+        }
+    }
+
 
     async function deleteUser(targetUsername) {
         try {
@@ -149,77 +253,6 @@ document.addEventListener('DOMContentLoaded', async function() {
             console.error('Error:', error);
         }
     }
-
-    // Grant premium
-    document.getElementById('grantPremiumBtn').addEventListener('click', async function() {
-        const targetUsername = document.getElementById('premiumUsername').value;
-
-        if (!targetUsername) {
-            alert('Please enter a username');
-            return;
-        }
-
-        try {
-            const response = await fetch('/api/admin/grant-premium', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ username: targetUsername })
-            });
-
-            const data = await response.json();
-            
-            if (response.ok) {
-                notifyPremiumGranted(targetUsername);
-                document.getElementById('premiumUsername').value = '';
-                loadUsers();
-                alert('Premium granted to ' + targetUsername);
-            } else {
-                alert('Error: ' + (data.message || 'Failed to grant premium'));
-                console.error('Grant premium error:', data);
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            alert('Error granting premium: ' + error.message);
-        }
-    });
-
-    // Remove premium
-    document.getElementById('removePremiumBtn').addEventListener('click', async function() {
-        const targetUsername = document.getElementById('removePremiumUsername').value;
-
-        if (!targetUsername) {
-            alert('Please enter a username');
-            return;
-        }
-
-        if (!confirm(`Are you sure you want to remove premium from ${targetUsername}?`)) {
-            return;
-        }
-
-        try {
-            const response = await fetch('/api/admin/remove-premium', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ username: targetUsername })
-            });
-
-            if (response.ok) {
-                notifyPremiumRemoved(targetUsername);
-                document.getElementById('removePremiumUsername').value = '';
-                loadUsers();
-            } else {
-                alert('Error removing premium');
-            }
-        } catch (error) {
-            console.error('Error:', error);
-        }
-    });
 
     // Back button
     document.getElementById('backBtn').addEventListener('click', () => {
