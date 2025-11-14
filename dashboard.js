@@ -137,11 +137,10 @@ document.addEventListener('DOMContentLoaded', async function() {
         div.style.cssText = 'display:flex;align-items:center;justify-content:center;flex-direction:column;padding:24px;min-width:260px;';
         div.innerHTML = `
             <div class="app-icon" style="font-size:40px">🖥️</div>
-            <h3>Virtual Terminal</h3>
-            <p class="app-status">Run commands in a web-based terminal</p>
+            <h3>VM</h3>
+            <p class="app-status">Open virtual machine in popup</p>
             <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;justify-content:center;">
-                <button id="openVMBtn" class="btn-app" style="padding:8px 12px;border-radius:6px;">Launch Terminal</button>
-                <button id="openRemoteVMBtn" class="btn-app" style="padding:8px 12px;border-radius:6px;">Open Remote VM</button>
+                <button id="openVMBtn" class="btn-app" style="padding:8px 12px;border-radius:6px;">Open VM</button>
                 <button id="requestAdminBtn" class="btn-app" style="padding:8px 12px;border-radius:6px;background:#ff9800;border:1px solid #e67e22;" title="Request server to restart with Admin privileges">🔐 Request Admin</button>
             </div>
         `;
@@ -149,14 +148,8 @@ document.addEventListener('DOMContentLoaded', async function() {
         appsGrid.insertBefore(div, appsGrid.children[1] || appsGrid.firstChild);
 
         document.getElementById('openVMBtn').addEventListener('click', () => {
-            openVMTerminal();
+            openVMPopup();
         });
-        const remoteBtn = document.getElementById('openRemoteVMBtn');
-        if (remoteBtn) {
-            remoteBtn.addEventListener('click', () => {
-                openRemoteVM();
-            });
-        }
         const adminBtn = document.getElementById('requestAdminBtn');
         if (adminBtn) {
             adminBtn.addEventListener('click', () => {
@@ -535,6 +528,16 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Refresh premium status periodically
     setInterval(updateAppAccess, 5000);
  // Open a Virtual Terminal in a popup
+    function openVMPopup() {
+        // Open the VM in a new Chrome popup tab
+        const features = 'width=1200,height=700,menubar=yes,toolbar=yes,location=yes,status=yes,resizable=yes,scrollbars=yes';
+        try {
+            window.open('about:blank?vm=true', 'vm_window', features);
+        } catch (e) {
+            alert('Could not open VM popup. Please check your popup blocker settings.');
+        }
+    }
+
     function openVMTerminal() {
         const features = 'width=1200,height=700,menubar=no,toolbar=no,location=no,status=no,resizable=yes,scrollbars=yes';
         let popup = null;
