@@ -3,6 +3,7 @@ const cors = require('cors');
 const fetch = require('node-fetch');
 const fs = require('fs');
 const path = require('path');
+const { exec } = require('child_process');
 
 const app = express();
 const PORT = 3000;
@@ -470,21 +471,133 @@ app.get('/', (req, res) => {
     res.redirect('/signup.html');
 });
 
-// Catch-all middleware for unmatched /api/* routes - always return JSON
-app.use('/api/', (req, res) => {
-    res.setHeader('Content-Type', 'application/json');
-    res.status(404).json({ 
-        error: 'API endpoint not found',
-        path: req.path,
-        method: req.method,
-        message: 'Check the endpoint URL and HTTP method'
+// Request server to restart with Administrator privileges
+app.post('/api/request-admin', (req, res) => {
+    const token = req.headers.authorization?.split(' ')[1];
+    const username = verifyToken(token);
+    if (!username) return res.status(401).json({ ok: false, error: 'Unauthorized' });
+
+    // Check if already running as admin
+    const checkAdminCmd = `powershell -NoProfile -NonInteractive -Command "[bool]([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]'Administrator')"`;
+    
+    exec(checkAdminCmd, { windowsHide: true }, (error, stdout, stderr) => {
+        const isAdmin = stdout.toLowerCase().includes('true');
+        
+        if (isAdmin) {
+            // Already running as admin
+            return res.json({ ok: true, message: 'Server is already running as Administrator', alreadyAdmin: true });
+        }
+        
+        // Try to request admin elevation using UAC
+        const projectDir = __dirname;
+        const scriptPath = path.join(projectDir, 'start-server-admin.bat');
+        
+        // Use powershell to run the batch file with RunAs
+        const elevateCmd = `powershell -NoProfile -NonInteractive -Command "Start-Process cmd -ArgumentList '/c cd /d ${projectDir} && npm start' -Verb RunAs"`;
+        
+        exec(elevateCmd, { windowsHide: true }, (error, stdout, stderr) => {
+            // Note: The elevation request may succeed even if exec returns an error
+            // because it launches a new process
+            return res.json({ 
+                ok: true, 
+                message: 'Admin privilege request sent. A Windows dialog should appear on your computer. Click Yes to approve.',
+                elevationRequested: true 
+            });
+        });
     });
 });
 
-// Catch-all middleware for unmatched static routes - serve static file or 404
-app.use((req, res) => {
-    res.setHeader('Content-Type', 'text/html');
-    res.status(404).send('<!DOCTYPE html><html><body><h1>404 Not Found</h1><p>File not found: ' + req.path + '</p></body></html>');
+// VM control endpoints (local Hyper-V) - only allow from localhost and authenticated users
+app.post('/api/vm/start', (req, res) => {
+    const token = req.headers.authorization?.split(' ')[1];
+    const username = verifyToken(token);
+    if (!username) return res.status(401).json({ message: 'Unauthorized' });
+
+    // only allow calls from localhost
+    const ip = req.ip || req.connection.remoteAddress;
+    if (!(ip === '::1' || ip === '127.0.0.1' || ip.startsWith('::ffff:127.0.0.1'))) {
+        return res.status(403).json({ message: 'VM control allowed only from localhost' });
+    }
+
+    const vmName = req.body && req.body.name ? req.body.name : 'Win10-VM';
+    // Start the VM using PowerShell Start-VM
+    const cmd = `powershell -NoProfile -NonInteractive -Command "Start-VM -Name '${vmName}' -ErrorAction Stop"`;
+    exec(cmd, { windowsHide: true }, (error, stdout, stderr) => {
+        if (error) {
+            const errorStr = String(stderr || error.message);
+            // Check if it's a permission error
+            if (errorStr.includes('Access denied') || errorStr.includes('authorized') || errorStr.includes('permission')) {
+                return res.status(403).json({ 
+                    ok: false, 
+                    error: 'PERMISSION ERROR: The server does not have Administrator privileges to control VMs. Restart the server as Administrator.',
+                    details: errorStr 
+                });
+            }
+            return res.status(500).json({ ok: false, error: errorStr });
+        }
+        return res.json({ ok: true, message: `VM '${vmName}' start requested`, stdout: stdout });
+    });
+});
+
+app.post('/api/vm/stop', (req, res) => {
+    const token = req.headers.authorization?.split(' ')[1];
+    const username = verifyToken(token);
+    if (!username) return res.status(401).json({ message: 'Unauthorized' });
+
+    const ip = req.ip || req.connection.remoteAddress;
+    if (!(ip === '::1' || ip === '127.0.0.1' || ip.startsWith('::ffff:127.0.0.1'))) {
+        return res.status(403).json({ message: 'VM control allowed only from localhost' });
+    }
+
+    const vmName = req.body && req.body.name ? req.body.name : 'Win10-VM';
+    const cmd = `powershell -NoProfile -NonInteractive -Command "Stop-VM -Name '${vmName}' -Force -ErrorAction Stop"`;
+    exec(cmd, { windowsHide: true }, (error, stdout, stderr) => {
+        if (error) {
+            const errorStr = String(stderr || error.message);
+            if (errorStr.includes('Access denied') || errorStr.includes('authorized') || errorStr.includes('permission')) {
+                return res.status(403).json({ 
+                    ok: false, 
+                    error: 'PERMISSION ERROR: The server does not have Administrator privileges. Restart as Administrator.',
+                    details: errorStr 
+                });
+            }
+            return res.status(500).json({ ok: false, error: errorStr });
+        }
+        return res.json({ ok: true, message: `VM '${vmName}' stop requested`, stdout: stdout });
+    });
+});
+
+app.get('/api/vm/status', (req, res) => {
+    const token = req.headers.authorization?.split(' ')[1];
+    const username = verifyToken(token);
+    if (!username) return res.status(401).json({ message: 'Unauthorized' });
+
+    const ip = req.ip || req.connection.remoteAddress;
+    if (!(ip === '::1' || ip === '127.0.0.1' || ip.startsWith('::ffff:127.0.0.1'))) {
+        return res.status(403).json({ message: 'VM status allowed only from localhost' });
+    }
+
+    const vmName = req.query.name || 'Win10-VM';
+    const cmd = `powershell -NoProfile -NonInteractive -Command "Get-VM -Name '${vmName}' | Select-Object Name, State, MemoryAssigned, ProcessorCount | ConvertTo-Json -Compress"`;
+    exec(cmd, { windowsHide: true }, (error, stdout, stderr) => {
+        if (error) {
+            const errorStr = String(stderr || error.message);
+            if (errorStr.includes('Access denied') || errorStr.includes('authorized') || errorStr.includes('permission')) {
+                return res.status(403).json({ 
+                    ok: false, 
+                    error: 'PERMISSION ERROR: The server does not have Administrator privileges. Restart as Administrator.',
+                    details: errorStr 
+                });
+            }
+            return res.status(500).json({ ok: false, error: errorStr });
+        }
+        try {
+            const info = JSON.parse(stdout || '{}');
+            return res.json({ ok: true, vm: info });
+        } catch (e) {
+            return res.status(500).json({ ok: false, error: 'Failed to parse VM info' });
+        }
+    });
 });
 
 // Google Custom Search API endpoint
@@ -584,6 +697,23 @@ app.get('/api/diagnose', async (req, res) => {
         console.error('Diagnose error for', target, err && err.message);
         res.json({ ok: false, error: String(err && err.message ? err.message : err) });
     }
+});
+
+// Catch-all middleware for unmatched /api/* routes - must come AFTER all specific /api/* routes
+app.use('/api/', (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.status(404).json({ 
+        error: 'API endpoint not found',
+        path: req.path,
+        method: req.method,
+        message: 'Check the endpoint URL and HTTP method'
+    });
+});
+
+// Catch-all middleware for unmatched static routes - serve static file or 404
+app.use((req, res) => {
+    res.setHeader('Content-Type', 'text/html');
+    res.status(404).send('<!DOCTYPE html><html><body><h1>404 Not Found</h1><p>File not found: ' + req.path + '</p></body></html>');
 });
 
 // Error handling middleware - always return JSON for /api errors

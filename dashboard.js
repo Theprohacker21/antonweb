@@ -84,6 +84,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (document.getElementById('searchCard')) {
             const note = document.querySelector('#searchCard .app-status');
             if (note) note.textContent = isLocked ? 'Other apps are available only for Premium users. Upgrade to unlock them.' : 'Use the search box to find sites';
+            // Still render apps and VM card even if search card already exists
+            renderAppCards(isLocked);
+            renderVMCard();
             return;
         }
 
@@ -109,8 +112,75 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
         document.getElementById('goToPremiumBtn').addEventListener('click', () => window.location.href = 'premium.html');
 
-        // Attach app button handlers after inserting search card
-        attachAppButtons();
+        // Render app cards after search card
+        renderAppCards(isLocked);
+        renderVMCard();
+    }
+
+    // Render a Virtual Machine / Terminal card
+    function renderVMCard() {
+        const appsGrid = document.querySelector('.apps-grid');
+        if (!appsGrid) return;
+        if (document.getElementById('vmCard')) return; // Don't duplicate
+
+        const div = document.createElement('div');
+        div.className = 'app-card';
+        div.id = 'vmCard';
+        div.style.cssText = 'display:flex;align-items:center;justify-content:center;flex-direction:column;padding:24px;min-width:260px;';
+        div.innerHTML = `
+            <div class="app-icon" style="font-size:40px">🖥️</div>
+            <h3>Virtual Terminal</h3>
+            <p class="app-status">Run commands in a web-based terminal</p>
+            <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;justify-content:center;">
+                <button id="openVMBtn" class="btn-app" style="padding:8px 12px;border-radius:6px;">Launch Terminal</button>
+                <button id="openRemoteVMBtn" class="btn-app" style="padding:8px 12px;border-radius:6px;">Open Remote VM</button>
+                <button id="requestAdminBtn" class="btn-app" style="padding:8px 12px;border-radius:6px;background:#ff9800;border:1px solid #e67e22;" title="Request server to restart with Admin privileges">🔐 Request Admin</button>
+            </div>
+        `;
+
+        appsGrid.insertBefore(div, appsGrid.children[1] || appsGrid.firstChild);
+
+        document.getElementById('openVMBtn').addEventListener('click', () => {
+            openVMTerminal();
+        });
+        const remoteBtn = document.getElementById('openRemoteVMBtn');
+        if (remoteBtn) {
+            remoteBtn.addEventListener('click', () => {
+                openRemoteVM();
+            });
+        }
+        const adminBtn = document.getElementById('requestAdminBtn');
+        if (adminBtn) {
+            adminBtn.addEventListener('click', () => {
+                requestServerAdmin();
+            });
+        }
+    }
+
+    // Ensure VM card exists (in case it's not created by renderSearchCard)
+    function createVMCardIfMissing() {
+        try {
+            const appsGrid = document.querySelector('.apps-grid');
+            if (!appsGrid) return;
+            if (document.getElementById('vmCard')) return;
+
+            const div = document.createElement('div');
+            div.className = 'app-card';
+            div.id = 'vmCard';
+            div.style.cssText = 'display:flex;align-items:center;justify-content:center;flex-direction:column;padding:24px;min-width:260px;';
+            div.innerHTML = `
+                <div class="app-icon" style="font-size:40px">🖥️</div>
+                <h3>Virtual Terminal</h3>
+                <p class="app-status">Run commands in a web-based terminal</p>
+                <button id="openVMBtn" class="btn-app" style="padding:8px 12px;border-radius:6px;">Launch Terminal</button>
+            `;
+
+            appsGrid.insertBefore(div, appsGrid.children[1] || appsGrid.firstChild);
+            const btn = document.getElementById('openVMBtn');
+            if (btn) btn.addEventListener('click', () => { try{ openVMTerminal(); }catch(e){console.error(e);} });
+        } catch (e) {
+            console.error('createVMCardIfMissing error', e);
+        }
     }
 
     // Map of app URLs
@@ -139,6 +209,54 @@ document.addEventListener('DOMContentLoaded', async function() {
         wattpad: 'https://www.wattpad.com/',
         deviantart: 'https://www.deviantart.com/'
     };
+
+    // Remote VM configuration (can be set per-user via localStorage)
+    // To set a default remote VM endpoint, set localStorage.setItem('REMOTE_VM_URL', 'https://your.remote-vm.example');
+    const REMOTE_VM = {
+        url: localStorage.getItem('REMOTE_VM_URL') || ''
+    };
+
+    // Render all app cards from APP_URLS
+    function renderAppCards(isPremium) {
+        const appsGrid = document.querySelector('.apps-grid');
+        if (!appsGrid) return;
+
+        const appIcons = {
+            chatgpt: '🤖', geforce: '🎮', tiktok: '📱', instagram: '📷', snapchat: '👻',
+            discord: '💬', twitch: '📺', youtube: '📹', roblox: '🎲', minecraft: '⛏️',
+            fortnite: '🎯', valorant: '🔫', twitter: '𝕏', reddit: '🔴', spotify: '🎵',
+            netflix: '🎬', steam: '🎮', epicgames: '🎮', 'discord-nitro': '💎', 'among-us': '👨‍🚀',
+            pinterest: '📌', wattpad: '📖', deviantart: '🎨'
+        };
+
+        Object.entries(APP_URLS).forEach(([appKey, appUrl]) => {
+            if (document.getElementById(`app-${appKey}`)) return; // Don't duplicate
+
+            const div = document.createElement('div');
+            div.className = 'app-card';
+            if (!isPremium) div.classList.add('locked');
+            div.id = `app-${appKey}`;
+            div.dataset.app = appKey;
+            div.style.cssText = 'display:flex;align-items:center;justify-content:center;flex-direction:column;padding:24px;min-width:260px;';
+
+            const displayName = appKey.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+            const icon = appIcons[appKey] || '📱';
+            const locked = !isPremium ? '<p style="color:#ff6b6b;font-size:12px;">Premium only</p>' : '';
+
+            div.innerHTML = `
+                <div class="app-icon" style="font-size:40px">${icon}</div>
+                <h3 style="margin:8px 0;">${displayName}</h3>
+                <p class="app-status" style="font-size:13px;color:#666;">Open app</p>
+                ${locked}
+                <button class="btn-app" style="padding:8px 12px;border-radius:6px;margin-top:8px;">Open</button>
+            `;
+
+            appsGrid.appendChild(div);
+        });
+
+        // Re-attach handlers for newly created app cards
+        attachAppButtons();
+    }
 
     // Attach click handlers for all .btn-app elements
     function attachAppButtons() {
@@ -403,7 +521,294 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Start initialization
     await updateAppAccess();
 
+    // Ensure the VM card is present on the dashboard
+    createVMCardIfMissing();
+
     // Refresh premium status periodically
     setInterval(updateAppAccess, 5000);
+ // Open a Virtual Terminal in a popup
+    function openVMTerminal() {
+        const features = 'width=1200,height=700,menubar=no,toolbar=no,location=no,status=no,resizable=yes,scrollbars=yes';
+        let popup = null;
+        try {
+            popup = window.open('about:blank', 'vm_terminal', features);
+        } catch (e) {
+            popup = null;
+        }
 
+        if (!popup) {
+            alert('Popup blocked. Please allow popups for this site to use the terminal.');
+            return;
+        }
+
+        try {
+            const doc = popup.document;
+            doc.open();
+            doc.write(`<!doctype html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>about:blank</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/xterm/4.18.0/xterm.min.css" />
+    <style>
+        * { margin: 0; padding: 0; }
+        html, body { width: 100%; height: 100%; background: #1e1e1e; }
+        #terminal { width: 100%; height: 100%; }
+        .xterm { padding: 10px; }
+        #fallback { width:100%; height:100%; box-sizing:border-box; padding:12px; background:#111; color:#ddd; font-family:monospace; }
+    </style>
+</head>
+<body>
+    <div id="terminal" style="display:none"></div>
+    <textarea id="fallback" style="display:none" readonly></textarea>
+    <script>
+        // Load xterm and initialize only after script loads. Provide a fallback textarea if xterm fails.
+        function initTerminal() {
+            try {
+                if (typeof Terminal !== 'undefined') {
+                    const term = new Terminal({ cols: 120, rows: 30, cursorBlink: true, theme: { background: '#1e1e1e', foreground: '#d4d4d4', cursor: '#aeafad' } });
+                    term.open(document.getElementById('terminal'));
+                    document.getElementById('terminal').style.display = 'block';
+                    document.getElementById('fallback').style.display = 'none';
+
+                    term.write('\r\n✓ Virtual Terminal Ready\r\n');
+                    term.write('\r\nThis is a web-based terminal emulator.\r\n');
+                    term.write('Type "help" for a list of available commands.\r\n');
+                    term.write('Type "exit" to close this terminal.\r\n');
+                    term.write('\r\n$ ');
+
+                    let inputBuffer = '';
+                    const commands = {
+                        'help': 'Available commands: help, echo, pwd, ls, date, whoami, clear, exit\\n',
+                        'pwd': '/home/user\\n',
+                        'ls': 'Desktop/  Documents/  Downloads/  Pictures/\\n',
+                        'date': new Date().toString() + '\\n',
+                        'whoami': 'terminal_user\\n',
+                        'clear': '\\x1b[2J\\x1b[H',
+                        'exit': 'goodbye'
+                    };
+
+                    term.onKey((key) => {
+                        const char = key.key;
+                        if (key.domEvent.code === 'Enter') {
+                            term.write('\r\n');
+                            const cmd = inputBuffer.trim().toLowerCase();
+                            if (cmd === 'exit') { term.write('Goodbye!\\r\\n'); setTimeout(() => window.close(), 800); return; }
+                            if (commands[cmd]) { term.write(commands[cmd]); } else if (cmd !== '') { term.write('Command not found: ' + cmd + '\\n'); }
+                            inputBuffer = '';
+                            term.write('$ ');
+                        } else if (key.domEvent.code === 'Backspace') {
+                            if (inputBuffer.length > 0) { inputBuffer = inputBuffer.slice(0, -1); term.write('\\x08 \\x08'); }
+                        } else if (char && char.length === 1 && char.charCodeAt(0) >= 32) {
+                            inputBuffer += char; term.write(char);
+                        }
+                    });
+                    return;
+                }
+            } catch (e) {
+                console.error('initTerminal error', e);
+            }
+            // Fallback: show simple read-only textarea with instructions
+            const fb = document.getElementById('fallback');
+            fb.style.display = 'block';
+            fb.value = 'Virtual Terminal (fallback)\n\nThe advanced terminal failed to load. You can still see demo output here.\n\n$ help\nAvailable commands: help, echo, pwd, ls, date, whoami, clear, exit\n';
+        }
+
+        // Dynamically load xterm script and initialize
+        (function(){
+            var s = document.createElement('script');
+            s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xterm/4.18.0/xterm.min.js';
+            s.async = true;
+            s.onload = function(){ setTimeout(initTerminal, 50); };
+            s.onerror = function(){ console.error('Failed to load xterm.js'); initTerminal(); };
+            document.head.appendChild(s);
+            // Also attempt to init in case xterm is already present
+            setTimeout(initTerminal, 200);
+        })();
+    <\/script>
+</body>
+</html>`);
+            doc.close();
+            try { popup.focus(); } catch (e) {}
+        } catch (err) {
+            console.error('Failed to open VM terminal:', err);
+            try { popup.close(); } catch (e) {}
+        }
+    }
+
+    // Open a remote VM URL in a popup. If a remote URL is not configured, prompt the user to enter one and save to localStorage.
+    function openRemoteVM() {
+        try {
+            // If the user wants to start the local Hyper-V VM, choose that option
+            const startLocal = confirm('Start local Hyper-V VM on this machine? Click OK to start the local Win10-VM, or Cancel to open a remote URL.');
+            if (startLocal) {
+                // Call local server endpoint to start VM
+                const token = localStorage.getItem('token');
+                fetch('/api/vm/start', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': token ? `Bearer ${token}` : ''
+                    },
+                    body: JSON.stringify({ name: 'Win10-VM' })
+                }).then(r => r.json()).then(data => {
+                    if (data && data.ok) {
+                        // Copy vmconnect command to clipboard and show instructions
+                        const cmd = 'vmconnect.exe localhost Win10-VM';
+                        try {
+                            navigator.clipboard.writeText(cmd);
+                            const instructionsMsg = `✓ VM start requested!\n\nThe command to launch the VM console has been copied to your clipboard:\n\n${cmd}\n\nTo proceed:\n1. Open PowerShell on this machine\n2. Paste the command above (Ctrl+V)\n3. Press Enter\n\nThe Windows 10 VM console should open.`;
+                            alert(instructionsMsg);
+                        } catch (clipErr) {
+                            const instructionsMsg = `✓ VM start requested!\n\nTo open the VM console on this machine, run:\n\nvmconnect.exe localhost Win10-VM\n\nYou can paste this into PowerShell or Command Prompt.`;
+                            alert(instructionsMsg);
+                        }
+                    } else {
+                        const errorMsg = data && data.error ? data.error : JSON.stringify(data);
+                        const isPermissionError = errorMsg && (errorMsg.includes('permission') || errorMsg.includes('authorized') || errorMsg.includes('Access denied'));
+                        
+                        if (isPermissionError) {
+                            const permissionInstructions = `⚠️ PERMISSION ERROR\n\nThe server does not have Administrator privileges to control the VM.\n\nTo fix this:\n\n1. Close the current Node.js server (press Ctrl+C in PowerShell)\n2. Right-click PowerShell and select "Run as Administrator"\n3. Navigate to: C:\\Users\\anton\\OneDrive\\Desktop\\idk-anton\n4. Run: npm start\n5. Then try "Open Remote VM" again\n\nThe browser will show a warning that the server is running as Admin - this is expected and needed for VM control to work.`;
+                            alert(permissionInstructions);
+                        } else {
+                            alert('Failed to start VM: ' + errorMsg);
+                        }
+                    }
+                }).catch(err => {
+                    console.error('openRemoteVM start error', err);
+                    alert('Failed to contact local server to start VM: ' + err.message);
+                });
+                return;
+            }
+
+            let url = REMOTE_VM.url || '';
+            if (!url) {
+                const input = prompt('Enter the full URL of the remote VM (https://...):');
+                if (!input) return;
+                url = input.trim();
+                if (!url) return;
+                localStorage.setItem('REMOTE_VM_URL', url);
+                REMOTE_VM.url = url;
+            }
+
+            const features = 'width=1200,height=800,menubar=no,toolbar=no,location=yes,status=yes,resizable=yes,scrollbars=yes';
+            let popup = null;
+            try {
+                popup = window.open('about:blank', 'remote_vm', features);
+            } catch (e) {
+                popup = null;
+            }
+
+            // If popup was blocked, try opening the URL directly in a new tab
+            if (!popup) {
+                const opened = window.open(url, '_blank');
+                if (!opened) alert('Popup blocked. Please allow popups or set the Remote VM URL in localStorage.');
+                return;
+            }
+
+            try {
+                // Navigate the popup to the remote VM URL to avoid including URL in our inline HTML
+                try { popup.location.href = url; } catch (e) { popup.document.location = url; }
+                try { popup.focus(); } catch (e) {}
+            } catch (err) {
+                console.error('Failed to open remote VM:', err);
+                try { popup.close(); } catch (e) {}
+            }
+        } catch (e) {
+            console.error('openRemoteVM error', e);
+            alert('Failed to open remote VM: ' + (e && e.message ? e.message : String(e)));
+        }
+    }
+
+    // Request the server to restart with Administrator privileges
+    function requestServerAdmin() {
+        const token = localStorage.getItem('token');
+        const modal = document.createElement('div');
+        modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:10000;';
+        
+        const content = document.createElement('div');
+        content.style.cssText = 'background:#fff;border-radius:8px;padding:24px;max-width:500px;box-shadow:0 4px 12px rgba(0,0,0,0.3);font-family:inherit;';
+        content.innerHTML = `
+            <h3 style="margin-top:0;color:#333;">Request Administrator Privileges</h3>
+            <p style="color:#666;line-height:1.6;">
+                This will request the server to restart with Administrator privileges so it can control Hyper-V VMs.
+            </p>
+            <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:4px;padding:12px;margin:12px 0;color:#856404;font-size:14px;">
+                <strong>⚠️ Note:</strong> You will see a Windows dialog asking to confirm the privilege escalation. Click "Yes" to proceed.
+            </div>
+            <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">
+                <button id="requestAdminCancel" style="background:#6c757d;color:#fff;border:none;padding:8px 16px;border-radius:4px;cursor:pointer;">Cancel</button>
+                <button id="requestAdminConfirm" style="background:#28a745;color:#fff;border:none;padding:8px 16px;border-radius:4px;cursor:pointer;">Request Admin</button>
+            </div>
+        `;
+        
+        modal.appendChild(content);
+        document.body.appendChild(modal);
+        
+        document.getElementById('requestAdminCancel').addEventListener('click', () => {
+            modal.remove();
+        });
+        
+        document.getElementById('requestAdminConfirm').addEventListener('click', async () => {
+            content.innerHTML = '<p style="color:#666;text-align:center;">Requesting administrator privileges...</p>';
+            
+            try {
+                const response = await fetch('/api/request-admin', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': token ? `Bearer ${token}` : ''
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.ok) {
+                    content.innerHTML = `
+                        <h3 style="color:#28a745;margin-top:0;">✓ Request Sent</h3>
+                        <p style="color:#666;line-height:1.6;">
+                            The server has been requested to restart with Administrator privileges.
+                        </p>
+                        <p style="color:#666;line-height:1.6;">
+                            <strong>You should see a Windows dialog on your computer.</strong> Click "Yes" to approve the restart.
+                        </p>
+                        <p style="color:#666;line-height:1.6;">
+                            After approval, the server will restart (you may see a brief disconnect). Refresh this page and try "Open Remote VM" again.
+                        </p>
+                        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">
+                            <button id="requestAdminOK" style="background:#28a745;color:#fff;border:none;padding:8px 16px;border-radius:4px;cursor:pointer;">OK</button>
+                        </div>
+                    `;
+                    document.getElementById('requestAdminOK').addEventListener('click', () => { modal.remove(); });
+                } else {
+                    content.innerHTML = `
+                        <h3 style="color:#dc3545;margin-top:0;">⚠️ Request Failed</h3>
+                        <p style="color:#666;line-height:1.6;">
+                            ${data.error || 'Could not request administrator privileges.'}
+                        </p>
+                        <p style="color:#666;font-size:14px;">
+                            <strong>Fallback:</strong> Use start-server-admin.bat or start-server-admin.ps1 to manually restart the server as Admin.
+                        </p>
+                        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">
+                            <button id="requestAdminOK" style="background:#6c757d;color:#fff;border:none;padding:8px 16px;border-radius:4px;cursor:pointer;">OK</button>
+                        </div>
+                    `;
+                    document.getElementById('requestAdminOK').addEventListener('click', () => { modal.remove(); });
+                }
+            } catch (err) {
+                console.error('Request admin error', err);
+                content.innerHTML = `
+                    <h3 style="color:#dc3545;margin-top:0;">⚠️ Error</h3>
+                    <p style="color:#666;line-height:1.6;">
+                        Failed to contact server: ${err.message}
+                    </p>
+                    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">
+                        <button id="requestAdminOK" style="background:#6c757d;color:#fff;border:none;padding:8px 16px;border-radius:4px;cursor:pointer;">OK</button>
+                    </div>
+                `;
+                document.getElementById('requestAdminOK').addEventListener('click', () => { modal.remove(); });
+            }
+        });
+    }
 });
